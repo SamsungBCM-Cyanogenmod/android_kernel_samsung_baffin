@@ -373,6 +373,7 @@ static int bcmbt_tty_ioctl(struct tty_struct *tty, struct file *file,
 	case TIO_GET_BT_WAKE_STATE:
 		rc = bcmbt_get_bt_wake_state(arg);
 		break;
+
 	case TIO_GET_BT_UART_PORT:
 		pr_err("%s: BLUETOOTH:Enter switch TIO_GET_BT_UART_PORT" \
 					 " => Just break\n", __func__);
@@ -380,6 +381,22 @@ static int bcmbt_tty_ioctl(struct tty_struct *tty, struct file *file,
 	case TIO_GET_BT_FIRMWARE:
 		pr_err("%s: BLUETOOTH:Enter switch TIO_GET_BT_FIRMWARE" \
 					 " => Just break\n", __func__);
+#if 0
+	case TIO_SET_LPM_MODE:
+		pr_warn("bcmbt_tty_ioctl(TIO_SET_LPM_MODE):not implemented\n");
+		break;
+#endif
+
+#ifdef CONFIG_BCM_BT_GPS_SELFTEST
+	case TIO_GPS_SETLFTEST_CMD: {
+		struct bcmbt_gps_selftest_cmd test_cmd;
+		if (copy_from_user(&test_cmd, (const void __user *)arg,
+				sizeof(struct bcmbt_gps_selftest_cmd))) {
+			pr_err("bcmbt_tty_ioctl(): Failed getting user data");
+			return -EFAULT;
+		}
+		rc = bcmbt_gps_selftest(&test_cmd);
+	}
 		break;
 	default:
 		pr_debug("%s: BLUETOOTH: switch default\n", __func__);
@@ -586,6 +603,20 @@ static int bcmbt_lpm_suspend(struct platform_device *pdev, pm_message_t state)
 	if (priv_g->plpm->uport != NULL) {
 		pr_debug("%s BLUETOOTH:Calling togglerts with value 0" \
 			" = enable successfully\n", __func__);
+	pdata = pdev->dev.platform_data;
+	bcm_bt_lpm_data.state = ENABLE_LPM_TYPE_OOB_USER;
+#ifdef BTLPM_LDISC_FREE_RESOURCES
+	/* store platform gpio assignement for ldisc use at open */
+	bcm_bt_lpm_data.gpio_bt_wake = pdata->gpio_bt_wake;
+	bcm_bt_lpm_data.gpio_host_wake = pdata->gpio_host_wake;
+#else
+	bcm_init_bt_wake(pdata);
+#endif
+	/* register the tty line discipline driver */
+	rc = bcmbt_tty_init();
+	if (rc) {
+		pr_err("%s: bcmbt_tty_init failed\n", __func__);
+		return -1;
 	}
 	return 0;
 }

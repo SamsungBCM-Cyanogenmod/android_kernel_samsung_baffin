@@ -9,6 +9,21 @@
 #include <mach/pi_mgr.h>
 #include <plat/pi_mgr.h>
 #endif
+	int bt_wake_installed;
+	int host_wake_installed;
+	int state;
+};
+
+enum {
+	ENABLE_LPM_TYPE_OOB_USER,
+	DISABLE_LPM,
+};
+
+//extern struct bcm_bt_lpm_platform_data brcm_bt_lpm_data;
+extern int serial8250_ioctl(struct uart_port *port, unsigned int cmd,
+			    unsigned long arg);
+//extern int brcm_init_bt_wake(const struct bcm_bt_lpm_platform_data *gpio_data);
+extern int brcm_init_hostwake(struct bcm_bt_lpm_platform_data *gpio_data);
 
 
 #define BTLPM_ENABLE_CLOCK 1
@@ -21,6 +36,10 @@
 
 #ifndef BCMBT_LPM_BT_WAKE_ASSERT
 #define BCMBT_LPM_BT_WAKE_ASSERT 0
+/* this define electrical level of GPIO for assert/de-asserted stated. */
+
+#ifndef BT_WAKE_ASSERT
+#define BT_WAKE_ASSERT 1
 #endif
 
 #ifndef BCMBT_LPM_BT_WAKE_DEASSERT
@@ -29,6 +48,8 @@
 
 #ifndef BCMBT_LPM_HOST_WAKE_ASSERT
 #define BCMBT_LPM_HOST_WAKE_ASSERT 0
+#ifndef HOST_WAKE_ASSERT
+#define HOST_WAKE_ASSERT 1
 #endif
 #ifndef BCMBT_LPM_HOST_WAKE_DEASSERT
 #define BCMBT_LPM_HOST_WAKE_DEASSERT (!(BCMBT_LPM_HOST_WAKE_ASSERT))
